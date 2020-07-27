@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import {Link, Redirect} from "react-router-dom";
 import TitleComponent from "../pages/title";
+import { Auth } from 'aws-amplify';
 
 
 export default class Header extends Component {
@@ -16,8 +17,15 @@ export default class Header extends Component {
 
     handleClickLogout(){
         localStorage.removeItem('token');
+        localStorage.removeItem('username');
+        localStorage.removeItem('email');
         localStorage.setItem('isLoggedIn', false);
         this.setState({ toDashboard: true });
+        Auth.signOut({ global: true }).then(result => {
+            console.log("result",result);
+        }).catch(error => {
+            console.log("error",error);
+        });
     }
 
     render() {
@@ -26,9 +34,9 @@ export default class Header extends Component {
         }
         return (
             <nav className="navbar navbar-expand navbar-dark bg-dark static-top">
-                <TitleComponent title="React CRUD Login "></TitleComponent>
+                <TitleComponent title="Learning Management System"></TitleComponent>
 
-                <Link to={'/'} className="navbar-brand mr-1">Start Bootstrap</Link>
+                <Link to={'/'} className="navbar-brand mr-1">Home</Link>
 
                 <button className="btn btn-link btn-sm text-white order-1 order-sm-0" id="sidebarToggle">
                     <i className="fas fa-bars"></i>
@@ -52,6 +60,7 @@ export default class Header extends Component {
                         <Link to={'#'} className="nav-link dropdown-toggle" id="userDropdown" role="button"
                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             <i className="fas fa-user-circle fa-fw"></i>
+                            <span>&nbsp;{localStorage.getItem("email")}</span>
                         </Link>
                         <div className="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
                             <Link to={'#'} className="dropdown-item">Settings</Link>

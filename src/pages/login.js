@@ -1,25 +1,26 @@
 import React, {Component} from 'react';
-import axios from 'axios';
 import {Link, Redirect} from 'react-router-dom';
 import TitleComponent from "./title";
+import {Auth} from "aws-amplify";
 
 export default class Login extends Component {
 
     state = {
-        email: '',
+        username: '',
         password: '',
         redirect: false,
         authError: false,
         isLoading: false
     };
 
-    handleEmailChange = event => {
-        this.setState({email: event.target.value});
+    handleUserNameChange = event => {
+        this.setState({username: event.target.value});
     };
     handlePwdChange = event => {
         this.setState({password: event.target.value});
     };
 
+    /*
     handleSubmit = event => {
         event.preventDefault();
         this.setState({isLoading: true});
@@ -42,10 +43,37 @@ export default class Login extends Component {
                 this.setState({authError: true, isLoading: false});
             });
     };
+    */
+
+    handleSubmit = event => {
+        event.preventDefault();
+        this.setState({isLoading: true});
+        const username = this.state.username;
+        const password = this.state.password;
+
+        Auth.signIn(username, password)
+            .then(result => {
+            console.log("result",result);
+            this.setState({isLoading: false});
+            if (result) {
+                console.log("username",result.username);
+                console.log("email",result.attributes.email);
+                console.log("token", result.attributes.sub);
+                localStorage.setItem('isLoggedIn', true);
+                localStorage.setItem("username", result.username);
+                localStorage.setItem("email", result.attributes.email);
+                localStorage.setItem('token', result.attributes.sub);
+                this.setState({redirect: true, isLoading: false});
+            }
+        }).catch(error => {
+            console.log("error",error);
+            this.setState({authError: true, isLoading: false});
+        });
+    };
 
     renderRedirect = () => {
         if (this.state.redirect) {
-            return <Redirect to='/dashboard'/>
+            return <Redirect to='/upload'/>
         }
     };
 
@@ -53,17 +81,17 @@ export default class Login extends Component {
         const isLoading = this.state.isLoading;
         return (
             <div className="container">
-                <TitleComponent title="React CRUD Login "></TitleComponent>
+                <TitleComponent title="Learning Management System Login "></TitleComponent>
                 <div className="card card-login mx-auto mt-5">
                     <div className="card-header">Login</div>
                     <div className="card-body">
                         <form onSubmit={this.handleSubmit}>
                             <div className="form-group">
                                 <div className="form-label-group">
-                                    <input className={"form-control " + (this.state.authError ? 'is-invalid' : '')} id="inputEmail" placeholder="Email address" type="text" name="email" onChange={this.handleEmailChange} autoFocus required/>
-                                    <label htmlFor="inputEmail">Email address</label>
+                                    <input className={"form-control " + (this.state.authError ? 'is-invalid' : '')} id="inputUserName" placeholder="Username" type="text" name="username" onChange={this.handleUserNameChange} autoFocus required/>
+                                    <label htmlFor="inputEmail">Username</label>
                                     <div className="invalid-feedback">
-                                        Please provide a valid Email.
+                                        Please provide a valid username.
                                     </div>
                                 </div>
                             </div>
@@ -91,14 +119,6 @@ export default class Login extends Component {
                                         <span></span>
                                     )}
                                 </button>
-                            </div>
-                            <div className="form-group">
-                                <div className="form-group">
-                                    <b>email:</b> gowthaman.nkl1@gmail.com
-                                </div>
-                                <div className="form-group">
-                                    <b>password :</b> password
-                                </div>
                             </div>
                         </form>
                         <div className="text-center">

@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
-import axios from 'axios';
 import {Link, Redirect} from 'react-router-dom';
+import { Auth } from 'aws-amplify';
 
 export default class Register extends Component {
 
@@ -22,7 +22,7 @@ export default class Register extends Component {
     handleNameChange = event => {
         this.setState({ name: event.target.value });
     };
-
+    /*
     handleSubmit = event => {
         event.preventDefault();
         this.setState({isLoading: true});
@@ -48,10 +48,43 @@ export default class Register extends Component {
                 this.setState({ authError: true, isLoading: false });
             });
     };
+    */
+
+    handleSubmit = event => {
+        event.preventDefault();
+        this.setState({isLoading: true});
+        const email = this.state.email;
+        const password = this.state.password;
+        const name = this.state.name;
+
+        console.log("username",name);
+        console.log("password",password);
+        console.log("email",email);
+
+        Auth.signUp({
+            username: name,
+            password: password,
+            attributes: {
+                email
+            }
+        }).then(result => {
+            console.log("result",result);
+            this.setState({isLoading: false});
+            if (result.user) {
+                this.setState({redirect: true, authError: true});
+                localStorage.setItem("user",name);
+            }else {
+                this.setState({redirect: false, authError: true});
+            }
+        }).catch(error => {
+                console.log("error",error);
+                this.setState({ authError: true, isLoading: false });
+            });
+    };
 
     renderRedirect = () => {
         if (this.state.redirect) {
-            return <Redirect to="/" />
+            return <Redirect to="/confirm" />
         }
     };
 
@@ -75,7 +108,7 @@ export default class Register extends Component {
                                     <input id="inputEmail" className={"form-control " + (this.state.authError ? 'is-invalid' : '')} placeholder="Email address" type="text" name="email" onChange={this.handleEmailChange} autoFocus required/>
                                     <label htmlFor="inputEmail">Email address</label>
                                     <div className="invalid-feedback">
-                                        Please provide a valid Email. or Email Exis
+                                        Please provide a valid Email. or Email Exists.
                                     </div>
                                 </div>
                             </div>

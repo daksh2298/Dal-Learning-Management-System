@@ -4,13 +4,19 @@ import {Link, Redirect} from 'react-router-dom';
 import Header from "../elements/header";
 import Sidebar from "../elements/sidebar";
 import Moment from 'react-moment';
+import Amplify, { Storage } from 'aws-amplify';
+import config from "../config";
+import ProgressBar from 'react-bootstrap/ProgressBar';
+import Footer from "../elements/footer";
 
-export default class FileUploadPage extends Component {
+export default class Upload extends Component {
 
     constructor(props) {
         super(props);
         this.file = '';
-        this.url = 'https://gowtham-rest-api-crud.herokuapp.com/';
+        this.fileName = '';
+        this.fileType = '';
+        this.url = 'https://' + config.bucketName + '.s3.amazonaws.com/public/';
         this.token = localStorage.getItem('token');
     }
 
@@ -18,45 +24,63 @@ export default class FileUploadPage extends Component {
         files: [],
         redirect: false,
         isLoading: false,
+        percentage: 0,
     };
 
     componentDidMount() {
-        axios.get(this.url + 'fileupload', { params: { token: this.token}})
-            .then(response => {
-                const files = response.data.data.files;
+
+        Storage.list('')
+            .then(result => {
+                const files = result;
                 this.setState({ files: files });
             })
             .catch(error => {
                 this.setState({ toDashboard: true });
                 console.log(error);
             });
+    }
 
+    listFiles = async () => {
+        const files = await Storage.list('')
+        let signedFiles = files.map(f => Storage.get(f.key))
+        signedFiles = await Promise.all(signedFiles)
+        console.log('signedFiles: ', signedFiles)
+        this.setState({ files: signedFiles })
     }
 
     handleChange = event => {
         event.preventDefault();
         this.file = event.target.files[0];
+        this.fileName = event.target.files[0].name;
+        this.fileType = event.target.files[0].type;
         document.getElementById('fileLabel').innerHTML = event.target.files[0].name;
     };
+
+    progressCallback(progress){
+
+    }
 
     handleSubmit = event => {
         event.preventDefault();
         this.setState({isLoading: true});
-        let bodyFormData = new FormData();
-        bodyFormData.append('file', this.file);
-        bodyFormData.set('token', this.token);
-        axios.post(this.url + 'fileupload', bodyFormData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                }})
+        const context = this;
+        Storage.put(this.fileName, this.file, {
+            contentType: this.fileType,
+            progressCallback(progress) {
+                console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
+                let percentageProgress = progress.loaded * 100/progress.total;
+                context.setState({ percentage: percentageProgress.toFixed(2) })
+            },
+        })
             .then(result => {
-                if (result.data.status) {
-                    this.componentDidMount();
-                    this.setState({redirect: true, isLoading: false});
-                    document.getElementById('fileInput').value = "";
-                    document.getElementById('fileLabel').innerHTML = "Choose file";
-                }
-            })
+            if (result) {
+                console.log(result);
+                this.componentDidMount();
+                this.setState({redirect: true, isLoading: false});
+                document.getElementById('fileInput').value = "";
+                document.getElementById('fileLabel').innerHTML = "Choose file";
+            }
+        })
             .catch(error => {
                 this.setState({ toDashboard: true });
                 console.log(error);
@@ -69,21 +93,26 @@ export default class FileUploadPage extends Component {
 
     renderRedirect = () => {
         if (this.state.redirect) {
-            return <Redirect to='/fileupload' />
+            return <Redirect to='/upload' />
         }
     };
 
     handleClickDelete = event => {
         const id = event.target.value;
-        document.getElementById('delete' + id).classList.remove('d-none');
+        console.log("id",id);
+        const span = document.getElementById('delete' + id);
+        span.classList.remove('d-none');
+        const file = span.dataset.file;
+        console.log("file to delete",file);
         const preview = document.querySelectorAll ('.delete' + id);
         preview[0].setAttribute("disabled", true);
-        axios.delete(this.url + 'filedelete/' + id , { params: { token: this.token}})
-            .then(response => {
+        Storage.remove(file)
+            .then(result => {
+                console.log(result)
                 this.componentDidMount();
             })
-            .catch( error => {
-                console.log(error.toString());
+            .catch(err => {
+                console.log(err)
                 this.componentDidMount();
             });
     };
@@ -101,9 +130,6 @@ export default class FileUploadPage extends Component {
                     <div id="content-wrapper">
                         <div className="container-fluid">
                             <ol className="breadcrumb">
-                                <li className="breadcrumb-item">
-                                    <Link to={'/dashboard'} >Dashboard</Link>
-                                </li>
                                 <li className="breadcrumb-item active">File Upload</li>
                             </ol>
                         </div>
@@ -118,7 +144,7 @@ export default class FileUploadPage extends Component {
                                                     <div className="input-group input-group-lg">
                                                         <div className="custom-file">
                                                             <input type="file" onChange={this.handleChange}  className="custom-file-input" id="fileInput"/>
-                                                                <label className="custom-file-label" id="fileLabel" htmlFor="fileInput">Choose file</label>
+                                                            <label className="custom-file-label" id="fileLabel" htmlFor="fileInput">Choose file</label>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -134,6 +160,13 @@ export default class FileUploadPage extends Component {
                                                     </div>
                                                 </div>
                                             </div>
+                                            <div style={{padding:8}}></div>
+                                            <div className="form-row">
+                                                <div className="col-md-12">
+                                                    <ProgressBar animated variant={this.state.percentage < 100 ? "info":"success"} now={this.state.percentage} label={`${this.state.percentage}%`} />
+                                                    {console.log("percentage ",this.state.percentage)}
+                                                </div>
+                                            </div>
                                         </div>
 
                                     </form>
@@ -145,23 +178,26 @@ export default class FileUploadPage extends Component {
                                 <table className="table table-bordered">
                                     <thead>
                                     <tr>
-                                        <th>id</th>
-                                        <th>image</th>
+                                        <th>Name</th>
+                                        <th>Download Link</th>
                                         <th>Created</th>
                                         <th className="text-center">Action</th>
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {this.state.files.map((files , index)=>
-                                        <tr key={files.id}>
-                                            <td>{index + 1}</td>
-                                            <td><img src={this.url + '/uploads/students/' + files.name} style={{height:50}} alt={files.name} /></td>
+                                    {this.state.files.map((file , index)=>
+                                        <tr key={index}>
+                                            <td>{file.key}</td>
+                                            {/*
+                                            <td><img key={index} src={this.url + file.key} style={{height: 50}} alt={file.key}/></td>
+                                            */}
+                                            <td><a href={this.url + file.key}>{file.key}</a></td>
                                             <td>
-                                                <Moment format="YYYY-MM-DD">{files.created_at}</Moment>
+                                                <Moment format="YYYY-MM-DD">{file.lastModified}</Moment>
                                             </td>
                                             <td className="text-center">
-                                                <button value={files.id}  className={'btn btn-sm btn-danger delete' + files.id } onClick={this.handleClickDelete} >Delete &nbsp;&nbsp;&nbsp;
-                                                        <span className="spinner-border spinner-border-sm d-none" id={'delete'+files.id} role="status" aria-hidden="true"></span>
+                                                <button value={file.eTag.slice(1,-1)} className={'btn btn-sm btn-danger delete' + file.eTag.slice(1,-1) } onClick={this.handleClickDelete} >Delete &nbsp;&nbsp;&nbsp;
+                                                    <span data-file={file.key} className="spinner-border spinner-border-sm d-none" id={'delete'+file.eTag.slice(1,-1)} role="status" aria-hidden="true"></span>
                                                 </button>
                                             </td>
                                         </tr>)
@@ -170,14 +206,7 @@ export default class FileUploadPage extends Component {
                                 </table>
                             </div>
                         </div>
-
-                        <footer className="sticky-footer">
-                            <div className="container my-auto">
-                                <div className="copyright text-center my-auto">
-                                    <span>Copyright © Your Website {this.getYear()}</span>
-                                </div>
-                            </div>
-                        </footer>
+                        <Footer/>
                     </div>
                 </div>
             </div>
