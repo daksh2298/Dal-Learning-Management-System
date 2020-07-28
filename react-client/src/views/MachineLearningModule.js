@@ -27,6 +27,8 @@ import "../assets/css/App.css"
 import logo from '../assets/img/logo.svg';
 import {Bar} from "react-chartjs-2";
 import {clusterChart} from "../variables/charts";
+import {fadeInLeft, fadeInRight} from 'react-animations';
+import Radium, {StyleRoot} from 'radium';
 
 const _ = require('lodash');
 
@@ -114,6 +116,32 @@ class MachineLearningModule extends React.Component {
 			})
 	}
 
+	styles = {
+		fadeInRight: {
+			animation: 'x 1s',
+			animationName: Radium.keyframes(fadeInRight, 'fadeInRight')
+		},
+		fadeInLeft: {
+			animation: 'x 1s',
+			animationName: Radium.keyframes(fadeInLeft, 'fadeInLeft')
+		}
+	}
+	sentimentalAnalysis = () => {
+		let url = "https://v9bvn40xu0.execute-api.us-east-1.amazonaws.com/default/sentimental-analysis-dallms";
+
+		fetch(url)
+			.then(response => response.json())
+			.then(data => {
+				console.log(data);
+				this.setState({
+					atag: true
+				})
+
+			});
+
+
+	}
+
 
 	render() {
 		var result = {
@@ -124,32 +152,37 @@ class MachineLearningModule extends React.Component {
 			"display": "flex"
 		}
 
-		const table = <Col md={8}>
-			<Card>
-				<Row>
-					{this.state.keys.map((listitems, idx) => (
-						<Col md={4}>
-							<Card>
-								<CardHeader>
-									<h5 className="card-category">Cluster of files</h5>
-									<CardTitle tag="h3">
-										<i className="tim-icons icon-molecule-40 text-primary"/>{" "}Clusters {idx}
-									</CardTitle>
-								</CardHeader>
-								<CardBody>
-									{this.state.resp[listitems].map((name, idx) => (
-										<p>
-											<i className="tim-icons icon-paper"/> {name}
-										</p>
-									))
-									}
-								</CardBody>
-							</Card>
-						</Col>
-					))}
-				</Row>
-			</Card>
-		</Col>
+		const table =
+			<StyleRoot>
+				<div style={this.styles.fadeInRight}>
+					<Col md={12}>
+						<Card className='p-2'>
+							<Row>
+								{this.state.keys.map((listitems, idx) => (
+									<Col md={4}>
+										<Card>
+											<CardHeader>
+												<h5 className="card-category">Cluster of files</h5>
+												<CardTitle tag="h3">
+													<i className="tim-icons icon-molecule-40 text-primary"/>{" "}Clusters {idx}
+												</CardTitle>
+											</CardHeader>
+											<CardBody>
+												{this.state.resp[listitems].map((name, idx) => (
+													<p>
+														<i className="tim-icons icon-paper"/> {name}
+													</p>
+												))
+												}
+											</CardBody>
+										</Card>
+									</Col>
+								))}
+							</Row>
+						</Card>
+					</Col>
+				</div>
+			</StyleRoot>
 		const labels = this.state.keys ? this.state.keys.map((key, idx) => {
 			return `Cluster ${idx}`
 		}) : [];
@@ -161,25 +194,32 @@ class MachineLearningModule extends React.Component {
 
 		console.log(labels, values);
 
-		const chart = <Col md="4">
-			<Card className="card-chart">
-				<CardHeader>
-					<h5 className="card-category">Cluster Analysis</h5>
-					<CardTitle tag="h3">
-						<i className="tim-icons icon-chart-bar-32 text-primary"/>{" "}
-						{labels.length ? `${labels.length} clusters` : ""}
-					</CardTitle>
-				</CardHeader>
-				<CardBody>
-					<div className="chart-area">
-						<Bar
-							data={clusterChart.data}
-							options={clusterChart.options}
-						/>
-					</div>
-				</CardBody>
-			</Card>
-		</Col>
+		const chart =
+			<StyleRoot>
+				<div className="col-md-12" style={this.styles.fadeInLeft}>
+					<Card className="card-chart">
+						<CardHeader>
+							<h5 className="card-category">Cluster Analysis</h5>
+							<CardTitle tag="h3">
+								<i className="tim-icons icon-chart-bar-32 text-primary"/>{" "}
+								{labels.length ? `${labels.length} clusters` : ""}
+							</CardTitle>
+						</CardHeader>
+						<CardBody>
+							<div className="chart-area">
+								<Bar
+									data={clusterChart.data}
+									options={clusterChart.options}
+								/>
+							</div>
+						</CardBody>
+					</Card>
+				</div>
+			</StyleRoot>
+		const atag = {
+			display: this.state.atag ? 'block':'none'
+		}
+
 		return (
 			<>
 				<div className="content">
@@ -188,45 +228,64 @@ class MachineLearningModule extends React.Component {
 					</div>
 					{this.state.showNotif ? this.showNotif("Clusters formed successfully.", "success") : null}
 					<h2>Machine Learning Module</h2>
-					<Row>
-						<Col md={8}>
-							<Form
-								onSubmit={this.onFormSubmit}
-							>
-								<Row>
-									<Col md={8}>
-										<div className="custom-file mt-1">
-											<label className="custom-file-label" htmlFor="fileToUpload"><i
-												className="tim-icons icon-upload"/> {this.state.file ? this.state.file.name : "Choose file"}
-											</label>
-											<Input type="file" name="fileToUpload" className="custom-file-input" id="fileToUpload"
-														 onChange={this.onChangeHandler}
-											/>
-										</div>
-									</Col>
-									<Col md={4}>
-										{/*{this.state.showUploadLoading ? <div className="loader"></div> : null}*/}
-										<Button type="submit" className="btn btn-neutral" name="submit"><i
-											className="tim-icons icon-cloud-upload-94"/>{" "}{this.state.showUploadLoading ? "Uploading file..." : "Upload File"}
-										</Button>
-										<input type="hidden" id="username" name="username" value={this.state.username}/>
-									</Col>
-								</Row>
-							</Form>
-						</Col>
-						<Col>
-							<Button className={"btn-success"} onClick={this.formClusters}><i
-								className="tim-icons icon-molecule-40 font-weight-bold"/> Cluster Files</Button>
-						</Col>
-					</Row>
-					<Row className={this.state.showLoading ? "justify-content-md-center row mt-3" : "row mt-3 animate-bottom"}>
-							{this.state.showChart ? chart : null}
-							{this.state.showLoading ?
-								<div className="animate-bottom"><h3 className="text-success">Loading clusters...</h3>  <img src={logo} className="App-logo"
-																																								 alt="logo"/></div> : table}
+
+					<Card>
+						<CardHeader>File Upload</CardHeader>
+						<CardBody>
+							<StyleRoot>
+								<div style={this.styles.fadeInRight}>
+									<Row>
+										<Col md={8}>
+											<Form
+												onSubmit={this.onFormSubmit}
+											>
+												<Row>
+													<Col md={8}>
+														<div className="custom-file mt-1">
+															<label className="custom-file-label" htmlFor="fileToUpload"><i
+																className="tim-icons icon-upload"/> {this.state.file ? this.state.file.name : "Choose file"}
+															</label>
+															<Input type="file" name="fileToUpload" className="custom-file-input" id="fileToUpload"
+																		 onChange={this.onChangeHandler}
+															/>
+														</div>
+													</Col>
+													<Col md={4}>
+														{/*{this.state.showUploadLoading ? <div className="loader"></div> : null}*/}
+														<Button type="submit" className="btn btn-neutral" name="submit"><i
+															className="tim-icons icon-cloud-upload-94"/>{" "}{this.state.showUploadLoading ? "Uploading file..." : "Upload File"}
+														</Button>
+														<input type="hidden" id="username" name="username" value={this.state.username}/>
+													</Col>
+												</Row>
+											</Form>
+										</Col>
+										<Col>
+											<Button className={"btn-success"} onClick={this.formClusters}><i
+												className="tim-icons icon-molecule-40 font-weight-bold"/> Cluster Files</Button>
+										</Col>
+									</Row>
+								</div>
+							</StyleRoot>
+						</CardBody>
+					</Card>
+
+					<Row className={this.state.showLoading ? "justify-content-md-center row mt-3" : "row mt-3"}>
+						{this.state.showChart ? chart : null}
+						{this.state.showLoading ?
+							<div className="animate-bottom"><h3 className="text-success">Loading clusters...</h3>  <img src={logo}
+																																																					className="App-logo"
+																																																					alt="logo"/>
+							</div> : table}
 
 					</Row>
 					<hr/>
+
+					<Button onClick={this.sentimentalAnalysis} variant="primary">Sentimental Analysis</Button>
+					<div style={atag}>
+						<a href="https://tagged-chats.s3.amazonaws.com/message.json">Download tagged chat file</a>
+					</div>
+
 
 				</div>
 			</>

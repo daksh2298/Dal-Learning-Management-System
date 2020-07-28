@@ -3,7 +3,9 @@ import React, {Component} from 'react';
 // import 'bootstrap/dist/css/bootstrap.min.css';
 // import {Button, Container, Form} from 'react-bootstrap';
 import {ChatFeed, Message} from 'react-chat-ui';
-import {Button} from "reactstrap";
+import {Button, Card, CardHeader} from "reactstrap";
+import CardBody from "reactstrap/es/CardBody";
+import CardFooter from "reactstrap/es/CardFooter";
 
 class ChatModule extends Component {
 
@@ -94,19 +96,32 @@ class ChatModule extends Component {
 				<div className="content">
 					{/*Lorem ipsum dolor sit amet, consectetur adipisicing elit. Assumenda atque commodi natus nisi. Accusantium atque delectus dicta illo odit sint velit! Aliquid delectus dignissimos quibusdam sint totam? Accusantium quasi, ratione!*/}
 					<h2>Chat App</h2>
-					<ChatFeed
-						messages={this.state.messages}
-						showSenderName={true}
-						isTyping={false}
-					/>
-					<form>
-						<div className="form-group">
-							<input
-								onChange={this.handleChange}
-								className="form-control" name="message" placeholder="Type a message" value={this.state.form.message}/>
-						</div>
-						<Button type="button" variant="primary" onClick={this.sendMessage}>Send</Button>
-					</form>
+					<Card className="mb-0" >
+						<CardHeader>Dal LMS Group chat</CardHeader>
+						<CardBody style={{height:"27rem", overflowY:"scroll"}}>
+							<ChatFeed
+								messages={this.state.messages}
+								showSenderName={true}
+								isTyping={false}
+							/>
+						</CardBody>
+						<CardFooter>
+							<form>
+								<div className="form-group">
+									<div className="row">
+										<div className="col-9">
+											<input
+												onChange={this.handleChange}
+												className="form-control w-100" name="message" placeholder="Type a message" value={this.state.form.message}/>
+										</div>
+										<div className="col-3">
+											<Button className=" w-100 m-0 btn-success" type="button" onClick={this.sendMessage}>Send</Button>
+										</div>
+									</div>
+								</div>
+							</form>
+						</CardFooter>
+					</Card>
 				</div>
 			</>
 
