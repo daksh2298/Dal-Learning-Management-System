@@ -22,33 +22,6 @@ export default class Register extends Component {
     handleNameChange = event => {
         this.setState({ name: event.target.value });
     };
-    /*
-    handleSubmit = event => {
-        event.preventDefault();
-        this.setState({isLoading: true});
-        const url = 'https://gowtham-rest-api-crud.herokuapp.com/register';
-        const email = this.state.email;
-        const password = this.state.password;
-        const name = this.state.name;
-        let bodyFormData = new FormData();
-        bodyFormData.set('email', email);
-        bodyFormData.set('name', name);
-        bodyFormData.set('password', password);
-        axios.post(url, bodyFormData)
-            .then(result => {
-                this.setState({isLoading: false});
-                if (result.data.status !== 'fail') {
-                    this.setState({redirect: true, authError: true});
-                }else {
-                    this.setState({redirect: false, authError: true});
-                }
-            })
-            .catch(error => {
-                console.log(error);
-                this.setState({ authError: true, isLoading: false });
-            });
-    };
-    */
 
     handleSubmit = event => {
         event.preventDefault();

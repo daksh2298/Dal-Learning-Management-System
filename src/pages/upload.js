@@ -16,7 +16,6 @@ export default class Upload extends Component {
         this.file = '';
         this.fileName = '';
         this.fileType = '';
-        this.url = 'https://' + config.bucketName + '.s3.amazonaws.com/public/';
         this.token = localStorage.getItem('token');
     }
 
@@ -28,11 +27,11 @@ export default class Upload extends Component {
     };
 
     componentDidMount() {
-
-        Storage.list('')
+        Storage.list('', { level: 'protected' })
             .then(result => {
                 const files = result;
                 this.setState({ files: files });
+                this.generateDownloadLink();
             })
             .catch(error => {
                 this.setState({ toDashboard: true });
@@ -40,12 +39,21 @@ export default class Upload extends Component {
             });
     }
 
-    listFiles = async () => {
-        const files = await Storage.list('')
-        let signedFiles = files.map(f => Storage.get(f.key))
-        signedFiles = await Promise.all(signedFiles)
-        console.log('signedFiles: ', signedFiles)
-        this.setState({ files: signedFiles })
+    generateDownloadLink(){
+        const fileData = this.state.files;
+        fileData.map(file =>{
+            const link_id = document.getElementById(file.eTag.slice(1,-1));
+            const image_id = document.getElementById("img" + file.eTag.slice(1,-1));
+            Storage.get(file.key, { level: 'protected' })
+                .then(result => {
+                    console.log("download_link : ",result)
+                    link_id.setAttribute("href",result.toString());
+                    image_id.setAttribute("src",result.toString());
+                })
+                .catch(err => {
+                    console.log(err)
+                });
+        })
     }
 
     handleChange = event => {
@@ -56,16 +64,13 @@ export default class Upload extends Component {
         document.getElementById('fileLabel').innerHTML = event.target.files[0].name;
     };
 
-    progressCallback(progress){
-
-    }
-
     handleSubmit = event => {
         event.preventDefault();
         this.setState({isLoading: true});
         const context = this;
         Storage.put(this.fileName, this.file, {
             contentType: this.fileType,
+            level: 'protected',
             progressCallback(progress) {
                 console.log(`Uploaded: ${progress.loaded}/${progress.total}`);
                 let percentageProgress = progress.loaded * 100/progress.total;
@@ -73,14 +78,14 @@ export default class Upload extends Component {
             },
         })
             .then(result => {
-            if (result) {
-                console.log(result);
-                this.componentDidMount();
-                this.setState({redirect: true, isLoading: false});
-                document.getElementById('fileInput').value = "";
-                document.getElementById('fileLabel').innerHTML = "Choose file";
-            }
-        })
+                if (result) {
+                    console.log(result);
+                    this.componentDidMount();
+                    this.setState({redirect: true, isLoading: false});
+                    document.getElementById('fileInput').value = "";
+                    document.getElementById('fileLabel').innerHTML = "Choose file";
+                }
+            })
             .catch(error => {
                 this.setState({ toDashboard: true });
                 console.log(error);
@@ -106,7 +111,7 @@ export default class Upload extends Component {
         console.log("file to delete",file);
         const preview = document.querySelectorAll ('.delete' + id);
         preview[0].setAttribute("disabled", true);
-        Storage.remove(file)
+        Storage.remove(file, { level: 'protected' })
             .then(result => {
                 console.log(result)
                 this.componentDidMount();
@@ -179,6 +184,7 @@ export default class Upload extends Component {
                                     <thead>
                                     <tr>
                                         <th>Name</th>
+                                        <th>Preview</th>
                                         <th>Download Link</th>
                                         <th>Created</th>
                                         <th className="text-center">Action</th>
@@ -186,12 +192,12 @@ export default class Upload extends Component {
                                     </thead>
                                     <tbody>
                                     {this.state.files.map((file , index)=>
-                                        <tr key={index}>
+                                        <tr key={file.eTag.slice(1,-1)}>
                                             <td>{file.key}</td>
-                                            {/*
-                                            <td><img key={index} src={this.url + file.key} style={{height: 50}} alt={file.key}/></td>
-                                            */}
-                                            <td><a href={this.url + file.key}>{file.key}</a></td>
+                                            <td>
+                                                <img id={"img" + file.eTag.slice(1,-1)} src="" style={{height: 50}} alt={file.key}/>
+                                            </td>
+                                            <td><a id={file.eTag.slice(1,-1)} href="">{file.key}</a></td>
                                             <td>
                                                 <Moment format="YYYY-MM-DD">{file.lastModified}</Moment>
                                             </td>
