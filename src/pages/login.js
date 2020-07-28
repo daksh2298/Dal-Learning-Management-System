@@ -25,7 +25,6 @@ export default class Login extends Component {
         this.setState({isLoading: true});
         const username = this.state.username;
         const password = this.state.password;
-
         Auth.signIn(username, password)
             .then(result => {
             console.log("result",result);
