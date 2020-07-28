@@ -13,7 +13,8 @@ class Chat extends Component {
             messages: [
             ],
             is_typing: true,
-            lastMessage: Date.now()
+            lastMessage: Date.now(),
+            atag: false
             };
 
     }
@@ -74,10 +75,29 @@ class Chat extends Component {
             
         })
         
-       }, 2000);
+       }, 100000);
+   }
+
+   sentimentalAnalysis = () => {
+       let url = "https://v9bvn40xu0.execute-api.us-east-1.amazonaws.com/default/sentimental-analysis-dallms";
+
+       fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            console.log(data);
+            this.setState({
+                atag: true
+            })
+
+        });
+       
+
    }
 
   render() {
+      var atag = {
+          display: this.state.atag ? 'block':'none'
+      }
 
     return (
         <Container >
@@ -94,6 +114,11 @@ class Chat extends Component {
                 </Form.Group>
                 <Button variant="primary" onClick={this.sendMessage}>Send</Button>
             </Form>
+
+            <Button onClick={this.sentimentalAnalysis} variant="primary">Sentimental Analysis</Button>
+            <div style={atag}>
+                <a href="https://tagged-chats.s3.amazonaws.com/message.json">Download tagged chat file</a>
+            </div>
         </Container>
 
     );
