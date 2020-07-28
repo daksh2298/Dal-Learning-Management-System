@@ -74,7 +74,7 @@ class Chat extends Component {
             
         })
         
-       }, 1000);
+       }, 2000);
    }
 
   render() {
