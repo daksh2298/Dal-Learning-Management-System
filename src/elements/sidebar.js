@@ -13,7 +13,7 @@ export default class Sidebar extends Component {
                             <span>&nbsp;Pages</span>
                         </Link>
                         <div className="dropdown-menu" aria-labelledby="pagesDropdown">
-                            <a className="dropdown-item" href="https://wordcloud-ch6r7tzjta-ue.a.run.app/">Word Cloud</a>
+                            <a className="dropdown-item" href="https://wordcloudv2-ch6r7tzjta-nn.a.run.app">Word Cloud</a>
                         </div>
                     </li>
                     <li className="nav-item">
