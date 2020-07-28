@@ -58,7 +58,7 @@ var routes = [
 		path: "/dataprocessing",
 		name: "Data Processing",
 		rtlName: "لوحة القيادة",
-		icon: "tim-icons icon-chat-33",
+		icon: "tim-icons icon-tag",
 		component: DataProcessing,
 		layout: "/user"
 	},

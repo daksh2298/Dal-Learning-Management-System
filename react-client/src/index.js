@@ -27,7 +27,7 @@ import "assets/scss/black-dashboard-react.scss";
 import "assets/demo/demo.css";
 import "assets/css/nucleo-icons.css";
 import Register from "./views/Register";
-import User from "./layouts/BlankTemplate/User";
+import User from "./layouts/User/User";
 import Login from "./views/Login";
 import OnlineSupport from "./views/OnlineSupport";
 import Home from "./views/Home";

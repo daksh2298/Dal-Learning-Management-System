@@ -1,11 +1,13 @@
 import React, {Component} from 'react';
-import {Redirect} from 'react-router-dom';
 import Moment from 'react-moment';
 import {Storage} from 'aws-amplify';
 import config from "../config";
 import ProgressBar from 'react-bootstrap/ProgressBar';
+import NotificationAlert from "react-notification-alert";
+import Radium, {StyleRoot} from "radium";
+import {fadeInDown, fadeInLeft, fadeInRight} from "react-animations";
 
-export default class Upload extends Component {
+export default class DataProcessing extends Component {
 
 	constructor(props) {
 		super(props);
@@ -24,7 +26,6 @@ export default class Upload extends Component {
 	};
 
 	componentDidMount() {
-
 		Storage.list('')
 			.then(result => {
 				const files = result;
@@ -34,6 +35,15 @@ export default class Upload extends Component {
 				this.setState({toDashboard: true});
 				console.log(error);
 			});
+		if (this.props.location.state) {
+			this.setState({
+				redirect: false
+			})
+
+		}
+		// this.setState({
+		// 	redirect:false
+		// })
 	}
 
 	listFiles = async () => {
@@ -87,12 +97,6 @@ export default class Upload extends Component {
 		return new Date().getFullYear();
 	};
 
-	renderRedirect = () => {
-		if (this.state.redirect) {
-			return <Redirect to='/upload'/>
-		}
-	};
-
 	handleClickDelete = event => {
 		const id = event.target.value;
 		console.log("id", id);
@@ -112,59 +116,109 @@ export default class Upload extends Component {
 				this.componentDidMount();
 			});
 	};
+	notify = (message, type) => {
+		var options = {};
+		options = {
+			place: "br",
+			message: (
+				<div>
+					<div>
+						{message}
+					</div>
+				</div>
+			),
+			type: type,
+			icon: "tim-icons icon-bell-55",
+			autoDismiss: 7
+		};
+		this.refs.notificationAlert.notificationAlert(options);
+		this.setState({redirect: false});
+		setTimeout(() => {
+			this.setState({
+				percentage: 0,
+			})
+		}, 1000);
+	};
+
+	styles = {
+		fadeInRight: {
+			animation: 'x 1s',
+			animationName: Radium.keyframes(fadeInRight, 'fadeInRight')
+		},
+		fadeInLeft: {
+			animation: 'x 1s',
+			animationName: Radium.keyframes(fadeInLeft, 'fadeInLeft')
+		},
+		fadeInDown: {
+			animation: 'x 1s',
+			animationName: Radium.keyframes(fadeInDown, 'fadeInDown')
+		}
+	}
 
 	render() {
-		// const isLoading = this.state.isLoading;
-		// if (this.state.toDashboard === true) {
-		// 	return <Redirect to='/'/>
-		// }
+		console.log(this.props.location.state ? this.props.location.state.id : "Did not get props");
 		return (
 			<>
 				<div className="content">
+					<div className="react-notification-alert-container">
+						<NotificationAlert ref="notificationAlert"/>
+					</div>
+					<h2>Data Processing Module</h2>
 					<div className="card mx-auto">
 						<div className="card-header">File Upload</div>
 						<div className="card-body">
-							<form onSubmit={this.handleSubmit}>
-								<div className="form-group">
-									<div className="form-row">
-										<div className="col-md-6">
-											<div className="input-group input-group-lg">
-												<div className="custom-file">
-													<input type="file" onChange={this.handleChange} className="custom-file-input" id="fileInput"/>
-													<label className="custom-file-label" id="fileLabel" htmlFor="fileInput">Choose file</label>
+							<StyleRoot>
+								<div style={this.styles.fadeInRight}>
+									<form onSubmit={this.handleSubmit}>
+										<div className="form-group">
+											<div className="form-row">
+												<div className="col-md-6">
+													<div className="input-group input-group-lg">
+														<div className="custom-file mt-1">
+															<input type="file" onChange={this.handleChange} className="custom-file-input"
+																		 id="fileInput"/>
+															<label className="custom-file-label" id="fileLabel" htmlFor="fileInput">Choose
+																file</label>
+														</div>
+													</div>
+												</div>
+												<div className="col-md-6">
+													<div className="form-label-group">
+														<button className="btn btn-primary btn-block" type="submit"
+																		disabled={this.state.isLoading ? true : false}><i className="tim-icons icon-cloud-upload-94"></i>{" "}Upload &nbsp;&nbsp;&nbsp;
+															{/*{isLoading ? (*/}
+															{/*	<span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"/>*/}
+															{/*) : (*/}
+															{/*	<span/>*/}
+															{/*)}*/}
+														</button>
+													</div>
+												</div>
+											</div>
+											<div style={{padding: 8}}/>
+											<div className="form-row">
+												<div className="col-md-12">
+													<ProgressBar className={this.state.percentage > 0 ? "justify-content-center font-weight-bold text-dark": "justify-content-center font-weight-bold"} animated variant={this.state.percentage < 100 ? "info" : "success"}
+																			 now={this.state.percentage} label={`${this.state.percentage}%`}/>
+													{console.log("percentage ", this.state.percentage)}
 												</div>
 											</div>
 										</div>
-										<div className="col-md-6">
-											<div className="form-label-group">
-												<button className="btn btn-primary btn-block" type="submit"
-																disabled={this.state.isLoading ? true : false}>Upload &nbsp;&nbsp;&nbsp;
-													{/*{isLoading ? (*/}
-													{/*	<span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"/>*/}
-													{/*) : (*/}
-													{/*	<span/>*/}
-													{/*)}*/}
-												</button>
-											</div>
-										</div>
-									</div>
-									<div style={{padding: 8}}/>
-									<div className="form-row">
+									</form>
+									{this.state.redirect ? this.notify("File uploaded successfully", "success") : null}
+									<div className="row">
 										<div className="col-md-12">
-											<ProgressBar animated variant={this.state.percentage < 100 ? "info" : "success"}
-																	 now={this.state.percentage} label={`${this.state.percentage}%`}/>
-											{console.log("percentage ", this.state.percentage)}
+											<a href="https://wordcloudv2-ch6r7tzjta-nn.a.run.app/" className="btn btn-success w-100"><i className="tim-icons icon-cloud-download-93"></i>{" "}Generate Word Cloud</a>
 										</div>
 									</div>
-								</div>
 
-							</form>
-							{this.renderRedirect()}
+								</div>
+							</StyleRoot>
 						</div>
 					</div>
 					<div style={{padding: 10}}/>
 					<div className="table">
-						<table className="table table-bordered">
+						<table className="table table-bordered animate-bottom">
 							<thead>
 							<tr>
 								<th>Name</th>
@@ -189,7 +243,7 @@ export default class Upload extends Component {
 														className={'btn btn-sm btn-danger delete' + file.eTag.slice(1, -1)}
 														onClick={this.handleClickDelete}>Delete &nbsp;&nbsp;&nbsp;
 											<span data-file={file.key} className="spinner-border spinner-border-sm d-none"
-	id={'delete' + file.eTag.slice(1, -1)} role="status" aria-hidden="true"/>
+														id={'delete' + file.eTag.slice(1, -1)} role="status" aria-hidden="true"/>
 										</button>
 									</td>
 								</tr>)
