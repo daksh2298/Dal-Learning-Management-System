@@ -1,0 +1,36 @@
+import requests
+import json
+
+def package_text(text):
+    return {"dialogAction": {"type": "Close","fulfillmentState": "Fulfilled","message": {"contentType": "PlainText","content": text}}}
+
+def dispatch(intent_request):
+    print('here')
+    intent_name = intent_request['currentIntent']['name']
+    if intent_name == "SecurityIntent":
+        print(intent_request['currentIntent'])
+        email=intent_request['currentIntent']['slots']['emailid']
+        url="https://us-central1-dallms-283403.cloudfunctions.net/getUserSecurityQuestions"
+        payload = {
+        "email":email
+        }
+        print("after payload")
+        response = requests.post(url, data=json.dumps(payload), headers={'Content-Type': 'application/json'})
+        print(response)
+        print(response.status_code)
+        content=b'Email doesnot exists'
+        print("response",response.content)
+        if response.content != content:
+            response_json=json.loads(response.content)
+            questions=response_json['questions']
+            list=""
+            for q in questions:
+                list += q+"\n"
+            return "The 3 security questions are as follows: "+ list
+        else:
+            return "Email id does not exists"
+
+def lambda_handler(event, context):
+    return package_text(dispatch(event))
+
+
