@@ -1,0 +1,67 @@
+import pymysql.cursors
+#a function to prepare a string for the lex bot response
+def package_text(text):
+    return {"dialogAction": {"type": "Close","fulfillmentState": "Fulfilled","message": {"contentType": "PlainText","content": text}}}
+#a function to query the db
+def query_db(db,query):
+    # try:
+    with db.cursor() as cursor:
+        cursor.execute(query)
+        result = cursor.fetchall()
+        db.close()
+        print("result",result)
+    #except:
+    #     result = "Sorry, I'm having trouble reaching the datasource"
+    
+    return result
+#the main processing function
+def dispatch(intent_request):
+    db = pymysql.connect(host="dal-lms.ct6zqkhmnhh1.us-east-1.rds.amazonaws.com",user="admin",password="serverless",db="dal_lms",cursorclass=pymysql.cursors.DictCursor)
+    print (intent_request)
+    intent_name = intent_request['currentIntent']['name']
+    if intent_name == "UserManagementIntent":
+        organisation=intent_request['currentIntent']['slots']['Organisation']
+        print(organisation)
+        print(type(organisation))
+        dal=['dal','dalhousie']
+        smu=['smu','st.mary','saint mary university']
+        if organisation.lower() in dal:
+            print('here')
+            query = "SELECT first_name,last_name FROM table_users a join table_user_state b on a.id=b.user_id join table_universities c on a.uni_id=c.id where b.is_active=1 and c.name='Dalhousie';"
+        elif organisation.lower() in smu:
+            query = "SELECT first_name,last_name FROM table_users a join table_user_state b on a.id=b.user_id join table_universities c on a.uni_id=c.id where b.is_active=1 and c.name='St. Mary';"
+        else:
+            return "No organisation of "+organisation+" found."
+       
+        result=query_db(db,query)
+        if result:
+            username=""
+            for r in result:
+                username+=r['first_name']+" "+r["last_name"]+", "
+            return "The users who are online currently are: "+username[:-2]
+        else:
+            return "No one else is online currently"
+    elif intent_name == "UserManagementofflineintent":
+        organisation=intent_request['currentIntent']['slots']['Organisations']
+        print(organisation)
+        print(type(organisation))
+        dal=['dal','dalhousie']
+        smu=['smu','st.mary','saint mary university']
+        if organisation.lower() in dal:
+            query = "SELECT first_name,last_name FROM table_users a join table_user_state b on a.id=b.user_id join table_universities c on a.uni_id=c.id where b.is_active=0 and c.name='Dalhousie';"
+        elif organisation.lower() in smu:
+            query = "SELECT first_name,last_name FROM table_users a join table_user_state b on a.id=b.user_id join table_universities c on a.uni_id=c.id where b.is_active=0 and c.name='St. Mary';"
+        else:
+            return "No organisation of "+organisation+" found."
+        result=query_db(db,query)
+        if result:
+            username=""
+            for r in result:
+                username+=r['first_name']+" "+r["last_name"]+", "
+            return "The users who are offline currently are: "+username[:-2]
+        else:
+            return "All other users are online"
+        
+#Lambda calls this function
+def lambda_handler(event, context):
+    return package_text(dispatch(event))
