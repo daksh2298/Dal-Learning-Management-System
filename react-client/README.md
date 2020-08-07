@@ -84,7 +84,7 @@ Your app is now deployed.
 ## Pages of the app
 Our group project definition is a Learning Management System. The current design of the application has the following designed and implemented pages:
 
-* Login Page (http://localhost:3000/lofin)
+* Login Page (http://localhost:3000/login)
 * Register Page (http://localhost:3000/register)
 * Home Page (after login) (http://localhost:3000/user/home)
 * Machine Learning Module (after login) (http://localhost:3000/user/machinelearning)
